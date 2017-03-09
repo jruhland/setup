@@ -65,6 +65,9 @@ tap "caskroom/cask"
 
 # Unix
 brew "git"
+brew "git-extras"
+brew "libxmlsec1"
+brew "zmq"
 
 # Tools
 brew "hub"
@@ -86,6 +89,7 @@ cask "1password"
 brew "node"
 brew "python"
 brew "ruby"
+cask "java"
 
 # Databases
 brew "postgresql", restart_service: true
