@@ -1,0 +1,91 @@
+function getpr() {
+  (
+    set -e
+    if [ -z "$1" ]; then
+      echo "use this script to checkout a pr to a local branch"
+      echo "getpr PR_NUMBER [LOCAL_BRANCH_NAME]"
+      exit
+    fi
+
+    echo "Retrieving PR #$1"
+    git fetch upstream pull/$1/head
+    if [ -z "$2" ]; then
+      BRANCH=pr$1
+    else
+      BRANCH=$2
+    fi
+
+    set +e
+    git rev-parse --verify $BRANCH >/dev/null
+
+    if [ $? -eq 0 ]; then
+      echo "Checking out and updating $BRANCH"
+      set -e
+      git checkout $BRANCH
+      git merge FETCH_HEAD
+    else
+      echo "Checking out to branch $BRANCH"
+      set -e
+      git checkout FETCH_HEAD -b $BRANCH
+    fi
+  )
+}
+
+function pulldb() {
+  (
+    set -e
+
+    if [ -z "$1" ]; then
+      echo "Usage: $0 <heroku-app-name> [local name] [backup id]"
+      echo "  $0 betterworks-champagne"
+      echo "  $0 betterworks-champagne champagne"
+      echo "  $0 betterworks-champagne champagne b101"
+      exit 1
+    fi
+
+    app="$1"
+    target="$1"
+
+    if [ -n "$2" ]; then
+      # use the specified target database name
+      target="$2"
+    fi
+
+    if [ `psql -l | grep "^ $target\b" | wc -l` -ne "0" ]; then
+      # drop the target database interactively
+      dropdb --if-exists --interactive "$target"
+    fi
+
+    id=""
+    if [ -n "$3" ]; then
+      id="$3"
+      echo "Downloading backup $id for $app"
+    else
+      echo "Downloading the latest backup for $app"
+    fi
+    tmpfile=$(mktemp /tmp/clonedb.XXXXX)
+    rm -f "$tmpfile"
+    url=$(heroku pg:backups:public-url $id -a "$app")
+    if type aria2c &> /dev/null; then
+      aria2c "$url" -x 4 --file-allocation=none -d / -o "$tmpfile"
+    else
+      curl -k -L "$url" > "$tmpfile"
+    fi
+
+    echo "Restoring from $tmpfile"
+    createdb "$target"
+    pg_restore -O -j `getconf _NPROCESSORS_ONLN` -d "$target" "$tmpfile"
+
+    rm -f $tmpfile
+    v
+  )
+}
+
+function usedb() {
+ if [ -z = "$1" ]; then
+   unset DATABASE_URL
+ else
+   export DATABASE_URL="postgres://127.0.0.1:5432/"
+ fi
+}
+
