@@ -37,9 +37,9 @@ function pulldb() {
 
     if [ -z "$1" ]; then
       echo "Usage: $0 <heroku-app-name> [local name] [backup id]"
-      echo "  $0 betterworks-champagne"
-      echo "  $0 betterworks-champagne champagne"
-      echo "  $0 betterworks-champagne champagne b101"
+      echo "  $0 champagne"
+      echo "  $0 champagne champagne"
+      echo "  $0 champagne champagne b101"
       exit 1
     fi
 
